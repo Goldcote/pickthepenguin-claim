@@ -17,8 +17,16 @@ export function decodeAddress(hex: string): string | null;
 export function decodeBool(hex: string): boolean;
 export function ethOf(wei: bigint): string;
 
+// ---- collections.js
+export type CollectionKey = 'pudgy' | 'lil';
+export interface Collection { key: CollectionKey; name: string; names: string; contract: string; max: number; prefix: string; field: string }
+export const COLLECTIONS: Readonly<Record<CollectionKey, Collection>>;
+export function collectionOf(key?: string): Collection;
+export function tokenOfLabel(label: string): { collection: Collection; id: number } | null;
+
 // ---- chain.js
 export const PUDGY: string;
+export const LIL_PUDGY: string;
 export const GOLDCOTE: string;
 export const DELEGATE_V2: string;
 export const DELEGATE_V1: string;
@@ -27,9 +35,9 @@ export class ChainError extends Error {}
 export type Rpc = (method: string, params: unknown[]) => Promise<any>;
 export function nodeRpc(nodes?: string[], o?: { timeout?: number }): Rpc;
 export type Via = 'owner' | 'delegate-v2' | 'delegate-v1';
-export function ownerOf(rpc: Rpc, id: number): Promise<string>;
-export function delegateOf(rpc: Rpc, wallet: string, holder: string, id: number): Promise<'delegate-v2' | 'delegate-v1' | null>;
-export function holds(rpc: Rpc, wallet: string, id: number): Promise<{ holder: string; via: Via | null }>;
+export function ownerOf(rpc: Rpc, id: number, contract?: string): Promise<string>;
+export function delegateOf(rpc: Rpc, wallet: string, holder: string, id: number, contract?: string): Promise<'delegate-v2' | 'delegate-v1' | null>;
+export function holds(rpc: Rpc, wallet: string, id: number, contract?: string): Promise<{ holder: string; via: Via | null }>;
 export function contractAccepts(rpc: Rpc, wallet: string, hash: Uint8Array, signature: string): Promise<boolean>;
 export function latestBlock(rpc: Rpc): Promise<number>;
 export function blockTime(rpc: Rpc, block: number): Promise<number>;
@@ -40,11 +48,11 @@ export function transferByHash(rpc: Rpc, hash: string): Promise<Transfer | null>
 // ---- claim.js
 export const SIGN_MS: number;
 export const PAY_MS: number;
-export function statement(authority: string, id: number): string;
-export function signMessage(o: { authority: string; uri: string; wallet: string; id: number; nonce: string; issued: number; expires: number }): string;
+export function statement(authority: string, id: number, collection?: string): string;
+export function signMessage(o: { authority: string; uri: string; wallet: string; id: number; collection?: string; nonce: string; issued: number; expires: number }): string;
 export interface SignIn { authority: string; address: string; statement: string; uri?: string; version?: string; chainId?: string; nonce?: string; issuedAt?: string; expirationTime?: string; lines: number }
 export function readMessage(message: string): SignIn | null;
-export function messageProblems(message: string, o: { id: number; wallet: string; hosts?: RegExp }): string[];
+export function messageProblems(message: string, o: { id: number; wallet: string; collection?: string; hosts?: RegExp }): string[];
 export function signedBy(rpc: Rpc, wallet: string, message: string, signature: string): Promise<boolean>;
 export const CODES: number[];
 export function codeWei(k: number): bigint;
@@ -55,7 +63,7 @@ export function stopSigns(host?: string): string[];
 
 // ---- howwecheck.js, index.js
 export const REPO: string;
-export function howWeCheckMd(o?: { example?: string; authority?: string; origin?: string }): string;
+export function howWeCheckMd(o?: { example?: string; authority?: string; origin?: string; collection?: string }): string;
 export const VERSION: string;
 
 // ---- check.js (bin/check.js)

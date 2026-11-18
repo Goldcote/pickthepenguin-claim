@@ -1,16 +1,18 @@
 // Check a claimed page's proof yourself, from public Ethereum data, without trusting pickthepenguin: bin/check.js runs
 // this. It reads the page's proof (/proof.json), checks the signed message word for word and its signature (or the
-// transfer to goldcote.eth), then reads who holds the penguin today.
+// transfer to goldcote.eth), then reads who holds the penguin today, in its collection's contract (./collections.js).
 
 import { blockTime, contractAccepts, delegateOf, GOLDCOTE, nodeRpc, ownerOf, transferByHash } from './chain.js';
 import { messageProblems, readMessage } from './claim.js';
+import { COLLECTIONS } from './collections.js';
 import { checksum, isAddress, personalHash, recoverSigner } from './eth.js';
 
-/** Where a page's proof is: a penguin's number, a page's address, or an address with its scheme.
- *  @param {string} target */
+/** Where a page's proof is: a Pudgy Penguin's number (1234), a Lil Pudgy's (lil-1234), a page's address, or an
+ *  address with its scheme. @param {string} target */
 export function proofUrl(target) {
   const t = String(target ?? '').trim();
   if (/^\d{1,4}$/.test(t)) return `https://${Number(t)}.pickthepenguin.com/proof.json`;
+  if (/^lil-\d{1,5}$/i.test(t)) return `https://lil-${Number(t.slice(4))}.pickthepenguin.com/proof.json`;
   if (/^https?:\/\//i.test(t)) return new URL('/proof.json', t).href;
   if (/^[a-z0-9.-]+(:\d+)?$/i.test(t)) return `https://${t.toLowerCase()}/proof.json`;
   return null;
@@ -30,7 +32,7 @@ export async function checkProof(target, o = {}) {
   const no = (/** @type {string} */ t) => { ok = false; lines.push(`✗ ${t}`); };
 
   const url = proofUrl(target);
-  if (!url) return { ok: false, lines: ['Give a penguin’s number, such as 1234, or a page’s address, such as merlin.pickthepenguin.com.'] };
+  if (!url) return { ok: false, lines: ['Give a penguin’s number, such as 1234 (lil-1234 for a Lil Pudgy), or a page’s address, such as merlin.pickthepenguin.com.'] };
   let r;
   try { r = await globalThis.fetch(url, { headers: { accept: 'application/json' }, redirect: 'follow' }); }
   catch { return { ok: false, lines: [`${url} could not be reached.`] }; }
@@ -39,13 +41,15 @@ export async function checkProof(target, o = {}) {
   /** @type {any} */
   let p;
   try { p = await r.json(); } catch { return { ok: false, lines: [`${url} is not a proof.`] }; }
-  const id = Number(p?.penguin);
-  if (!Number.isInteger(id) || id < 0 || id > 8887 || !isAddress(p.wallet) || !isAddress(p.holder) || (p.way !== 'sign' && p.way !== 'pay')) return { ok: false, lines: [`${url} is not a proof.`] };
+  // its collection: the field that names its token (penguin: a Pudgy Penguin, lilPudgy: a Lil Pudgy)
+  const c = Object.values(COLLECTIONS).find((x) => p?.[x.field] !== undefined);
+  const id = Number(c ? p[c.field] : NaN);
+  if (!c || !Number.isInteger(id) || id < 0 || id > c.max || !isAddress(p.wallet) || !isAddress(p.holder) || (p.way !== 'sign' && p.way !== 'pay')) return { ok: false, lines: [`${url} is not a proof.`] };
   const wallet = p.wallet.toLowerCase();
-  lines.push(`Pudgy Penguin #${id} · ${p.page ?? url.replace(/proof\.json$/, '')}`);
+  lines.push(`${c.name} #${id} · ${p.page ?? url.replace(/proof\.json$/, '')}`);
 
   if (p.way === 'sign') {
-    const problems = messageProblems(String(p.message ?? ''), { id, wallet, hosts: o.hosts });
+    const problems = messageProblems(String(p.message ?? ''), { id, wallet, collection: c.key, hosts: o.hosts });
     if (problems.length) for (const t of problems) no(`The signed message: ${t}`);
     else yes(`The signed message is the claim message for #${id}, word for word.`);
     const hash = personalHash(String(p.message ?? ''));
@@ -68,14 +72,14 @@ export async function checkProof(target, o = {}) {
   }
 
   // and today
-  const now = await ownerOf(rpc, id);
+  const now = await ownerOf(rpc, id, c.contract);
   if (now === wallet) yes(`Today ${checksum(wallet)} still holds #${id}.`);
   else {
     // (as the daily check: the page stays when today's holder delegated to the wallet that proved it, or to the holder
     // it proved for, such as a penguin moved into its owner's own vault)
     const holder = p.holder.toLowerCase();
-    if (await delegateOf(rpc, wallet, now, id)) yes(`Today ${checksum(now)} holds #${id}, and ${checksum(wallet)} acts for it on delegate.xyz.`);
-    else if (holder !== wallet && holder !== now && (await delegateOf(rpc, holder, now, id))) yes(`Today ${checksum(now)} holds #${id}, and ${checksum(holder)}, the holder it was proved for, acts for it on delegate.xyz.`);
+    if (await delegateOf(rpc, wallet, now, id, c.contract)) yes(`Today ${checksum(now)} holds #${id}, and ${checksum(wallet)} acts for it on delegate.xyz.`);
+    else if (holder !== wallet && holder !== now && (await delegateOf(rpc, holder, now, id, c.contract))) yes(`Today ${checksum(now)} holds #${id}, and ${checksum(holder)}, the holder it was proved for, acts for it on delegate.xyz.`);
     else lines.push(`! Today #${id} is held by ${checksum(now)}, another wallet: the page goes back to waiting for its new holder at the next daily check.`);
   }
   lines.push(ok ? 'The proof holds.' : 'The proof does not hold.');

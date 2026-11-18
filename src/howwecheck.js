@@ -1,25 +1,31 @@
 // How a proof is checked, in plain words and Markdown: what pickthepenguin.com shows at /how-we-check (and .md), and
 // HOW-WE-CHECK.md in this repository. Anyone can read it before trusting a page, or build their own checker from it.
 
-import { DELEGATE_V1, DELEGATE_V2, GOLDCOTE, PUDGY } from './chain.js';
+import { DELEGATE_V1, DELEGATE_V2, GOLDCOTE } from './chain.js';
+import { collectionOf, COLLECTIONS } from './collections.js';
 import { checksum } from './eth.js';
 
 export const REPO = 'https://github.com/Goldcote/pickthepenguin-claim';
 
-/** @param {{ example?: string; authority?: string; origin?: string }} [o] an example page: its address, the address
- *  the message names (with a port on a test computer), and its origin. pickthepenguin.com's #1234 when left out. */
+/** @param {{ example?: string; authority?: string; origin?: string; collection?: string }} [o] an example page: its
+ *  address, the address the message names (with a port on a test computer), its origin, and its collection's key
+ *  (./collections.js). pickthepenguin.com's Pudgy Penguin #1234 when left out. */
 export function howWeCheckMd(o = {}) {
-  const ex = o.example ?? '1234.pickthepenguin.com', authority = o.authority ?? ex, origin = o.origin ?? `https://${ex}`;
+  const c = collectionOf(o.collection);
+  const ex = o.example ?? `${c.prefix}1234.pickthepenguin.com`, authority = o.authority ?? ex, origin = o.origin ?? `https://${ex}`;
+  const pudgy = COLLECTIONS.pudgy, lil = COLLECTIONS.lil;
   return `# How pickthepenguin checks a proof
 
-Every Pudgy Penguin has a page at its number, such as ${ex}. Its holder makes the page theirs by proving they control the wallet that holds the penguin. There are two ways to prove it, and neither can move the penguin. Everything below is public and can be checked by anyone.
+Every Pudgy Penguin has a page at its number, such as 1234.pickthepenguin.com, and a Lil Pudgy's page is at lil- and its number, such as lil-1234.pickthepenguin.com. Its holder makes the page theirs by proving they control the wallet that holds the penguin. There are two ways to prove it, and neither can move the penguin. Everything below is public and can be checked by anyone.
 
 ## Who holds a penguin
 
-- The Pudgy Penguins contract on Ethereum: \`${checksum(PUDGY)}\`. \`ownerOf(tokenId)\` names the wallet that holds a penguin (token ids 0 to 8887).
-- A holder can let another wallet act for them on delegate.xyz, so a penguin kept in a vault never has to touch a website. We accept a wallet that the registry names for the holder, for the whole vault, for the Pudgy Penguins contract or for that token, full delegations only:
-  - registry v2 \`${checksum(DELEGATE_V2)}\`: \`checkDelegateForERC721(wallet, holder, ${checksum(PUDGY)}, tokenId, 0x0)\`
-  - registry v1 \`${checksum(DELEGATE_V1)}\`: \`checkDelegateForToken(wallet, holder, ${checksum(PUDGY)}, tokenId)\`
+- Each collection's contract on Ethereum names the wallet that holds a penguin, with \`ownerOf(tokenId)\`:
+  - ${pudgy.names}: \`${checksum(pudgy.contract)}\`, token ids 0 to ${pudgy.max}
+  - ${lil.names}: \`${checksum(lil.contract)}\`, token ids 0 to ${lil.max}
+- A holder can let another wallet act for them on delegate.xyz, so a penguin kept in a vault never has to touch a website. We accept a wallet that the registry names for the holder, for the whole vault, for the penguin's contract or for that token, full delegations only:
+  - registry v2 \`${checksum(DELEGATE_V2)}\`: \`checkDelegateForERC721(wallet, holder, contract, tokenId, 0x0)\`
+  - registry v1 \`${checksum(DELEGATE_V1)}\`: \`checkDelegateForToken(wallet, holder, contract, tokenId)\`
 
 ## Way 1: a signed message
 
@@ -29,7 +35,7 @@ The wallet signs a Sign-In with Ethereum message (EIP-4361), with \`personal_sig
 ${authority} wants you to sign in with your Ethereum account:
 0x…
 
-Claim ${authority} for Pudgy Penguin #1234. A signature only: no transaction, no gas, no approval.
+Claim ${authority} for ${c.name} #1234. A signature only: no transaction, no gas, no approval.
 
 URI: ${origin}/claim
 Version: 1
@@ -62,10 +68,10 @@ Only whoever controls a wallet can send from it, and the amount was shown to tha
 Each claimed page also gives its proof as data, at \`/proof.json\`. Our check tool reads it and checks it again from public Ethereum data, without trusting us:
 
 \`\`\`
-npx github:Goldcote/pickthepenguin-claim 1234
+npx github:Goldcote/pickthepenguin-claim ${c.prefix}1234
 \`\`\`
 
-It checks that the signed message is the claim message for that penguin, word for word, and that the signature comes from the wallet it names (or that the transfer went from that wallet to goldcote.eth with the code's amount). Then it reads who holds the penguin today. It asks a public Ethereum node; \`--rpc\` and an address of your own picks another.
+For a Pudgy Penguin, give its number (1234); for a Lil Pudgy, lil- and its number (lil-1234); or any page's address. It checks that the signed message is the claim message for that penguin, word for word, and that the signature comes from the wallet it names (or that the transfer went from that wallet to goldcote.eth with the code's amount). Then it reads who holds the penguin today. It asks a public Ethereum node; \`--rpc\` and an address of your own picks another.
 
 ## The code
 

@@ -29,10 +29,16 @@ Issued At: … (now)
 Expiration Time: … (ten minutes from now)
 ```
 
+On a Lil Pudgy’s page, such as lil-1234.pickthepenguin.com, the sentence names it the same way:
+
+```
+Claim lil-1234.pickthepenguin.com for Lil Pudgy #1234. A signature only: no transaction, no gas, no approval.
+```
+
 1. **The page’s own address.** MetaMask, and other wallets that read sign-ins, check it matches the site you’re on and warn you if it doesn’t.
 2. **Your wallet:** the one that holds the penguin, or a wallet you linked to it on delegate.xyz.
 3. **What you agree to, in words.** The promise “no transaction, no gas, no approval” is part of what you sign, and it goes public with your proof.
-4. **Chain ID 1:** Ethereum’s main network, where Pudgy Penguins live.
+4. **Chain ID 1:** Ethereum’s main network, where Pudgy Penguins and Lil Pudgys live.
 5. **The nonce:** a code used once, good for ten minutes. Once you connect, the claim page shows the same code, so you can match the two.
 
 Some wallets, and hardware wallets on their own screen, show it as plain text. A Ledger set to always show hashes adds a “Message hash” after the words: that’s normal.

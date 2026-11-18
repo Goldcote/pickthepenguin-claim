@@ -16,6 +16,7 @@ test('WALLET.md lists every stop sign and request, and the message’s own sente
   for (const s of stopSigns()) assert.ok(md.includes(`- ${s}\n`), s);
   for (const r of WALLET_REQUESTS) assert.ok(md.includes(`\`${r.method}\``), r.method);
   assert.ok(md.includes(statement('1234.pickthepenguin.com', 1234)));
+  assert.ok(md.includes(statement('lil-1234.pickthepenguin.com', 1234, 'lil')));
 });
 
 test('one version: the package’s, the code’s and the README’s', () => {

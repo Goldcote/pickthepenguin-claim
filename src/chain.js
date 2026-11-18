@@ -1,12 +1,13 @@
-// Ethereum, read and never written: who holds a penguin, whether a wallet is its holder's delegate on delegate.xyz,
+// Ethereum, read and never written: who holds a penguin (a Pudgy Penguin, or a Lil Pudgy: ./collections.js), whether a
+// wallet is its holder's delegate on delegate.xyz,
 // whether a contract wallet (a Safe) accepts a signature, and the plain transfers that reach goldcote.eth. Every function
 // here takes `rpc`, the one way it reaches Ethereum: (method, params) => the node's answer. nodeRpc() makes one from a
 // list of nodes; pickthesite's server puts its own provider first, the check tool (bin/check.js) asks public nodes.
 
+import { PUDGY } from './collections.js';
 import { bytesToHex, callData, decodeAddress, decodeBool, encAddress, encBytes32, encUint } from './eth.js';
 
-/** The Pudgy Penguins contract. */
-export const PUDGY = '0xbd3531da5cf5857e7cfaa92426877b022e612cf8';
+export { LIL_PUDGY, PUDGY } from './collections.js';
 /** goldcote.eth: Goldcote Ltd's own name on Ethereum, the company in pickthepenguin's Terms. Way 2's transfers go here. */
 export const GOLDCOTE = '0x0cd586c0117b7cea016cf2b505b104c49a2a68fa';
 /** delegate.xyz's registries: v2, and v1 for the delegations made before it (both at these addresses on every chain). */
@@ -44,32 +45,34 @@ export function nodeRpc(nodes = PUBLIC_NODES, o = {}) {
 /** @param {Rpc} rpc @param {string} to @param {string} data @returns {Promise<string>} */
 const call = (rpc, to, data) => rpc('eth_call', [{ to, data }, 'latest']);
 
-/** The wallet that holds a penguin now (lowercase). @param {Rpc} rpc @param {number} id */
-export async function ownerOf(rpc, id) {
-  const a = decodeAddress(await call(rpc, PUDGY, callData('ownerOf(uint256)', [{ s: encUint(id) }])));
+/** The wallet that holds a penguin now (lowercase). `contract`: its collection's, Pudgy Penguins' when left out.
+ *  @param {Rpc} rpc @param {number} id @param {string} [contract] */
+export async function ownerOf(rpc, id, contract = PUDGY) {
+  const a = decodeAddress(await call(rpc, contract, callData('ownerOf(uint256)', [{ s: encUint(id) }])));
   if (!a) throw new ChainError('ownerOf: no address');
   return a;
 }
 
-/** Is `wallet` allowed to act for `holder` on this penguin through delegate.xyz (its whole vault, the Pudgy Penguins
+/** Is `wallet` allowed to act for `holder` on this penguin through delegate.xyz (its whole vault, its collection's
  *  contract, or this token; full delegations only)? Which registry says so, or null.
- *  @param {Rpc} rpc @param {string} wallet @param {string} holder @param {number} id
+ *  @param {Rpc} rpc @param {string} wallet @param {string} holder @param {number} id @param {string} [contract]
  *  @returns {Promise<'delegate-v2' | 'delegate-v1' | null>} */
-export async function delegateOf(rpc, wallet, holder, id) {
-  const v2 = callData('checkDelegateForERC721(address,address,address,uint256,bytes32)', [{ s: encAddress(wallet) }, { s: encAddress(holder) }, { s: encAddress(PUDGY) }, { s: encUint(id) }, { s: encBytes32('0x') }]);
+export async function delegateOf(rpc, wallet, holder, id, contract = PUDGY) {
+  const v2 = callData('checkDelegateForERC721(address,address,address,uint256,bytes32)', [{ s: encAddress(wallet) }, { s: encAddress(holder) }, { s: encAddress(contract) }, { s: encUint(id) }, { s: encBytes32('0x') }]);
   if (decodeBool(await call(rpc, DELEGATE_V2, v2))) return 'delegate-v2';
-  const v1 = callData('checkDelegateForToken(address,address,address,uint256)', [{ s: encAddress(wallet) }, { s: encAddress(holder) }, { s: encAddress(PUDGY) }, { s: encUint(id) }]);
+  const v1 = callData('checkDelegateForToken(address,address,address,uint256)', [{ s: encAddress(wallet) }, { s: encAddress(holder) }, { s: encAddress(contract) }, { s: encUint(id) }]);
   if (decodeBool(await call(rpc, DELEGATE_V1, v1))) return 'delegate-v1';
   return null;
 }
 
 /** @typedef {'owner' | 'delegate-v2' | 'delegate-v1'} Via */
 /** Does this wallet hold the penguin, or act for its holder? The holder and how, or null with the holder.
- *  @param {Rpc} rpc @param {string} wallet @param {number} id @returns {Promise<{ holder: string; via: Via | null }>} */
-export async function holds(rpc, wallet, id) {
-  const holder = await ownerOf(rpc, id), w = wallet.toLowerCase();
+ *  @param {Rpc} rpc @param {string} wallet @param {number} id @param {string} [contract]
+ *  @returns {Promise<{ holder: string; via: Via | null }>} */
+export async function holds(rpc, wallet, id, contract = PUDGY) {
+  const holder = await ownerOf(rpc, id, contract), w = wallet.toLowerCase();
   if (holder === w) return { holder, via: 'owner' };
-  return { holder, via: await delegateOf(rpc, w, holder, id) };
+  return { holder, via: await delegateOf(rpc, w, holder, id, contract) };
 }
 
 /** A contract wallet's own word on a signature (EIP-1271: isValidSignature answers 0x1626ba7e when it accepts it).

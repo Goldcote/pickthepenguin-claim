@@ -1,7 +1,7 @@
 {
   "name": "pickthepenguin-claim",
-  "version": "1.0.0",
-  "description": "The code behind making a Pudgy Penguin's page yours on pickthepenguin.com: what the claim page asks your wallet for, the message you sign, how a proof is checked, and a tool to check any page's proof yourself.",
+  "version": "1.1.0",
+  "description": "The code behind making a Pudgy Penguin's or a Lil Pudgy's page yours on pickthepenguin.com: what the claim page asks your wallet for, the message you sign, how a proof is checked, and a tool to check any page's proof yourself.",
   "type": "module",
   "exports": {
     ".": { "types": "./src/index.d.ts", "default": "./src/index.js" },

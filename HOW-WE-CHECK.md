@@ -1,13 +1,15 @@
 # How pickthepenguin checks a proof
 
-Every Pudgy Penguin has a page at its number, such as 1234.pickthepenguin.com. Its holder makes the page theirs by proving they control the wallet that holds the penguin. There are two ways to prove it, and neither can move the penguin. Everything below is public and can be checked by anyone.
+Every Pudgy Penguin has a page at its number, such as 1234.pickthepenguin.com, and a Lil Pudgy's page is at lil- and its number, such as lil-1234.pickthepenguin.com. Its holder makes the page theirs by proving they control the wallet that holds the penguin. There are two ways to prove it, and neither can move the penguin. Everything below is public and can be checked by anyone.
 
 ## Who holds a penguin
 
-- The Pudgy Penguins contract on Ethereum: `0xBd3531dA5CF5857e7CfAA92426877b022e612cf8`. `ownerOf(tokenId)` names the wallet that holds a penguin (token ids 0 to 8887).
-- A holder can let another wallet act for them on delegate.xyz, so a penguin kept in a vault never has to touch a website. We accept a wallet that the registry names for the holder, for the whole vault, for the Pudgy Penguins contract or for that token, full delegations only:
-  - registry v2 `0x00000000000000447e69651d841bD8D104Bed493`: `checkDelegateForERC721(wallet, holder, 0xBd3531dA5CF5857e7CfAA92426877b022e612cf8, tokenId, 0x0)`
-  - registry v1 `0x00000000000076A84feF008CDAbe6409d2FE638B`: `checkDelegateForToken(wallet, holder, 0xBd3531dA5CF5857e7CfAA92426877b022e612cf8, tokenId)`
+- Each collection's contract on Ethereum names the wallet that holds a penguin, with `ownerOf(tokenId)`:
+  - Pudgy Penguins: `0xBd3531dA5CF5857e7CfAA92426877b022e612cf8`, token ids 0 to 8887
+  - Lil Pudgys: `0x524cAB2ec69124574082676e6F654a18df49A048`, token ids 0 to 22221
+- A holder can let another wallet act for them on delegate.xyz, so a penguin kept in a vault never has to touch a website. We accept a wallet that the registry names for the holder, for the whole vault, for the penguin's contract or for that token, full delegations only:
+  - registry v2 `0x00000000000000447e69651d841bD8D104Bed493`: `checkDelegateForERC721(wallet, holder, contract, tokenId, 0x0)`
+  - registry v1 `0x00000000000076A84feF008CDAbe6409d2FE638B`: `checkDelegateForToken(wallet, holder, contract, tokenId)`
 
 ## Way 1: a signed message
 
@@ -53,7 +55,7 @@ Each claimed page also gives its proof as data, at `/proof.json`. Our check tool
 npx github:Goldcote/pickthepenguin-claim 1234
 ```
 
-It checks that the signed message is the claim message for that penguin, word for word, and that the signature comes from the wallet it names (or that the transfer went from that wallet to goldcote.eth with the code's amount). Then it reads who holds the penguin today. It asks a public Ethereum node; `--rpc` and an address of your own picks another.
+For a Pudgy Penguin, give its number (1234); for a Lil Pudgy, lil- and its number (lil-1234); or any page's address. It checks that the signed message is the claim message for that penguin, word for word, and that the signature comes from the wallet it names (or that the transfer went from that wallet to goldcote.eth with the code's amount). Then it reads who holds the penguin today. It asks a public Ethereum node; `--rpc` and an address of your own picks another.
 
 ## The code
 

@@ -11,22 +11,24 @@
 // claim page asks a wallet for, and what should make them stop. The server keeps its own records; the checks are these.
 
 import { contractAccepts, GOLDCOTE } from './chain.js';
+import { collectionOf } from './collections.js';
 import { checksum, ethOf, isAddress, personalHash, recoverSigner } from './eth.js';
 
 export const SIGN_MS = 10 * 60_000, PAY_MS = 60 * 60_000;
 
 // ---- way 1: the message -------------------------------------------------------------------------------------------------
 /** The sentence the wallet shows as what you agree to. Our promise is part of what you sign.
- *  @param {string} authority the page's address, e.g. 1234.pickthepenguin.com @param {number} id */
-export const statement = (authority, id) => `Claim ${authority} for Pudgy Penguin #${id}. A signature only: no transaction, no gas, no approval.`;
+ *  @param {string} authority the page's address, e.g. 1234.pickthepenguin.com @param {number} id
+ *  @param {string} [collection] its collection's key (./collections.js): Pudgy Penguins when left out */
+export const statement = (authority, id, collection) => `Claim ${authority} for ${collectionOf(collection).name} #${id}. A signature only: no transaction, no gas, no approval.`;
 
 /** The message their wallet shows and signs: Sign-In with Ethereum (EIP-4361), so wallets name the site asking and
  *  warn when the page asking is not at the address it names.
- *  @param {{ authority: string; uri: string; wallet: string; id: number; nonce: string; issued: number; expires: number }} o */
+ *  @param {{ authority: string; uri: string; wallet: string; id: number; collection?: string; nonce: string; issued: number; expires: number }} o */
 export function signMessage(o) {
   return [
     `${o.authority} wants you to sign in with your Ethereum account:`, checksum(o.wallet), '',
-    statement(o.authority, o.id), '',
+    statement(o.authority, o.id, o.collection), '',
     `URI: ${o.uri}`, 'Version: 1', 'Chain ID: 1', `Nonce: ${o.nonce}`, `Issued At: ${new Date(o.issued).toISOString()}`, `Expiration Time: ${new Date(o.expires).toISOString()}`,
   ].join('\n');
 }
@@ -47,16 +49,16 @@ export function readMessage(message) {
   return { authority: first[1], address: lines[1], statement: lines[3], uri: f.URI, version: f.Version, chainId: f['Chain ID'], nonce: f.Nonce, issuedAt: f['Issued At'], expirationTime: f['Expiration Time'], lines: lines.length };
 }
 
-/** Is this exactly the message a claim of penguin `id` from `wallet` signs? What isn't, in words (none: it is).
- *  `hosts`: the addresses a page may have (pickthepenguin.com's by default).
- *  @param {string} message @param {{ id: number; wallet: string; hosts?: RegExp }} o @returns {string[]} */
+/** Is this exactly the message a claim of penguin `id` (of `collection`, Pudgy Penguins when left out) from `wallet`
+ *  signs? What isn't, in words (none: it is). `hosts`: the addresses a page may have (pickthepenguin.com's by default).
+ *  @param {string} message @param {{ id: number; wallet: string; collection?: string; hosts?: RegExp }} o @returns {string[]} */
 export function messageProblems(message, o) {
   const m = readMessage(message);
   if (!m) return ['It is not a sign-in message.'];
   const out = [], hosts = o.hosts ?? /^[a-z0-9-]+\.pickthepenguin\.com$/;
   if (!hosts.test(m.authority)) out.push(`It names ${m.authority}, which is not a pickthepenguin.com page.`);
   if (m.address !== checksum(o.wallet)) out.push(`It names the wallet ${m.address}, not ${checksum(o.wallet)}.`);
-  if (m.statement !== statement(m.authority, o.id)) out.push('Its sentence is not the claim of this penguin, word for word.');
+  if (m.statement !== statement(m.authority, o.id, o.collection)) out.push('Its sentence is not the claim of this penguin, word for word.');
   if (!m.uri || !m.uri.endsWith(`//${m.authority}/claim`)) out.push('Its URI is not the claim page at the address it names.');
   if (m.version !== '1') out.push('Its version is not 1.');
   if (m.chainId !== '1') out.push('Its chain is not Ethereum (Chain ID 1).');

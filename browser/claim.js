@@ -26,7 +26,9 @@
   }
 
   if (form) {
-    const id = form.dataset.penguin;
+    // the penguin's number; how the page names it, #1234 for a Pudgy Penguin, Lil #1234 for a Lil Pudgy (data-label);
+    // and its picture's address, its page's key (data-key: a Lil Pudgy's is 100000 and its number)
+    const id = form.dataset.penguin, label = form.dataset.label || `#${id}`, key = form.dataset.key || id;
     const email = document.getElementById('clEmail');
     const btn = document.getElementById('clConnect');
     const list = document.getElementById('clWallets');
@@ -42,7 +44,7 @@
       not_found: 'This claim isn’t there any more. Start again.',
     };
     const words = (e, holder) => (e === 'not_holder'
-      ? `This wallet doesn’t hold #${id}, and isn’t linked to its holder on delegate.xyz.${holder ? ` #${id} is held by ${short(holder)}.` : ''} Connect that wallet, or a wallet it delegated to.`
+      ? `This wallet doesn’t hold ${label}, and isn’t linked to its holder on delegate.xyz.${holder ? ` ${label} is held by ${short(holder)}.` : ''} Connect that wallet, or a wallet it delegated to.`
       : WORDS[e] || WORDS.chain);
 
     // wallets in this browser tell us they are there (EIP-6963); an older one only sets window.ethereum
@@ -75,10 +77,10 @@
         say(status, 'Checking it on Ethereum…');
         const v = await post(`/claim/${r.id}/sign`, { signature });
         if (v.ok) {
-          say(status, `Proved. #${id}’s page is yours: your panel link is on its way to ${email.value.trim()}.`, 'done');
+          say(status, `Proved. ${label}’s page is yours: your panel link is on its way to ${email.value.trim()}.`, 'done');
           btn.disabled = true;
           const see = document.createElement('a');
-          see.href = '/'; see.className = 'cl-btn'; see.textContent = `See #${id}’s page`;
+          see.href = '/'; see.className = 'cl-btn'; see.textContent = `See ${label}’s page`;
           status.after(see);
         } else say(status, words(v.error, v.holder), 'bad');
       } catch (e) {
@@ -113,7 +115,7 @@
           try {
             say(status, 'Opening WalletConnect…');
             if (!window.penguinWallet) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = `/site/wallet.js?v=${form.dataset.v || ''}`; sc.onload = ok; sc.onerror = no; document.head.append(sc); });
-            const w = await window.penguinWallet.connect(form.dataset.reown, { name: 'pickthepenguin', description: 'A page for every Pudgy Penguin', url: location.origin, icons: [`${location.origin}/peng/${id}-96.webp`] });
+            const w = await window.penguinWallet.connect(form.dataset.reown, { name: 'pickthepenguin', description: 'A page for every Pudgy Penguin', url: location.origin, icons: [`${location.origin}/peng/${key}-96.webp`] });
             await signWith(w.provider, w.disconnect);
           } catch { say(status, 'The connection didn’t open. Try again, or use way 2.', 'bad'); }
         });
