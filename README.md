@@ -38,9 +38,13 @@ Give a penguin's number or a page's address (`merlin.pickthepenguin.com`). The t
 
 ## Versions
 
-- `v1.0.0`, 17 November 2026: the first release.
+- `v1.0.0`, 18 November 2026: the first release.
 
 pickthepenguin.com runs a tagged release of this repository, and every claim page names it at its foot. Any change comes as a new release here first.
+
+## Using this code
+
+It is public so you can check us: read it, run it and its tests, and check any page's proof with it, free. Any other use, such as claims for another collection, needs an agreement with Goldcote Ltd first: write to hello@pickthesite.com. [LICENSE](LICENSE) has the terms.
 
 ## Who
 
