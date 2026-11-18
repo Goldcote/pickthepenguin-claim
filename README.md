@@ -46,6 +46,7 @@ Give a Pudgy Penguin's number, lil- and a Lil Pudgy's number, or a page's addres
 
 - `v1.0.0`, 18 November 2026: the first release.
 - `v1.1.0`, 18 November 2026: Lil Pudgys, at lil- and their number. The message names the collection, the checks read its own contract, and the check tool takes `lil-1234`. Pudgy Penguins' claims are checked as before.
+- `v1.2.0`, 18 November 2026: the claim page's script only. "Connect wallet" brings the wallet list into view, the proof's progress shows under the wallets, and a proof ends with confetti and its links a click away. The checks are unchanged.
 
 pickthepenguin.com runs a tagged release of this repository, and every claim page names it at its foot. Any change comes as a new release here first.
 

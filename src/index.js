@@ -8,5 +8,5 @@ export * from './claim.js';
 export { howWeCheckMd, REPO } from './howwecheck.js';
 export { checkProof, proofUrl } from './check.js';
 
-/** This release. pickthesite names it at the foot of every claim page; it is also the tag on GitHub (v1.1.0). */
-export const VERSION = '1.1.0';
+/** This release. pickthesite names it at the foot of every claim page; it is also the tag on GitHub (v1.2.0). */
+export const VERSION = '1.2.0';
